@@ -1,0 +1,9 @@
+.git
+.gradle
+**/build
+!server/app/build
+server/app/build/*
+!server/app/build/libs
+server/app/build/libs/*
+!server/app/build/libs/urokplan-server.jar
+postgres-data
