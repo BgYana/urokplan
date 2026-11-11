@@ -1,7 +1,5 @@
 package urokplan.learning.application
 
-import urokplan.learning.domain.SubmissionStatus
-import java.time.Instant
 import java.util.UUID
 
 interface LearningUseCases {
@@ -20,83 +18,10 @@ interface LearningUseCases {
     fun getFeedback(actorId: UUID, lessonId: UUID): List<FeedbackView>
 }
 
-data class CreateAssignmentCommand(
-    val lessonId: UUID,
-    val text: String,
-    val links: List<String>,
-    val deadline: Instant?,
-    val targetStudentPublicIds: Set<String>,
-)
-
-data class SaveDraftCommand(val text: String?, val links: List<String>)
-
 enum class ReviewDecision {
     REVISION_REQUESTED,
     ACCEPTED,
 }
-
-data class ReviewSubmissionCommand(
-    val decision: ReviewDecision,
-    val comment: String,
-    val score: Int,
-)
-
-data class AssessmentCommand(val score: Int, val comment: String?)
-data class FeedbackCommand(val mood: Int, val difficulty: Int, val comment: String?)
-
-data class AssignmentView(
-    val id: UUID,
-    val lessonId: UUID,
-    val text: String,
-    val links: List<String>,
-    val deadline: Instant?,
-    val overdue: Boolean,
-    val createdAt: Instant,
-    val students: List<AssignmentStudentView>,
-)
-
-data class AssignmentStudentView(
-    val studentPublicId: String,
-    val studentDisplayName: String,
-    val submissions: List<SubmissionView>,
-)
-
-data class SubmissionView(
-    val id: UUID,
-    val attemptNumber: Int,
-    val text: String?,
-    val links: List<String>,
-    val status: SubmissionStatus,
-    val submittedAt: Instant?,
-    val submittedLate: Boolean,
-    val reviewComment: String?,
-    val score: Int?,
-    val reviewedAt: Instant?,
-)
-
-data class AssessmentView(
-    val id: UUID,
-    val lessonId: UUID,
-    val version: Int,
-    val score: Int,
-    val comment: String?,
-    val createdAt: Instant,
-)
-
-data class AssessmentSummaryView(
-    val studentPublicId: String,
-    val averageScore: Double?,
-    val assessments: List<AssessmentView>,
-)
-
-data class FeedbackView(
-    val studentPublicId: String,
-    val mood: Int,
-    val difficulty: Int,
-    val comment: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-)
 
 enum class LearningErrorKind {
     BAD_REQUEST,

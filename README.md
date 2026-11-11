@@ -61,14 +61,19 @@
 
 ```bash
 docker compose down -v
-./gradlew :server:app:buildFatJar
 docker compose up --build -d
 
 export BASE_URL=http://localhost:8080
 curl --fail-with-body --silent --show-error "$BASE_URL/api/health" | jq
 ```
 
-Docker не запускает Gradle и не собирает приложение. После изменений Kotlin-кода сначала повторно выполните `./gradlew :server:app:buildFatJar`, затем пересоберите контейнер командой `docker compose up --build -d`.
+Docker собирает приложение в отдельном builder-слое на основе Gradle 9.1.0 и JDK 21 и сохраняет зависимости и build cache между сборками. 
+
+Каждый Gradle-модуль также содержит собственный `Dockerfile` для будущего независимого использования. Сейчас эти Dockerfile только выполняют `assemble` выбранного модуля и помещают его JAR в `/artifacts`; в запуске через Docker Compose они не участвуют. Например:
+
+```bash
+docker build -f identity/Dockerfile -t urokplan-identity-artifact .
+```
 
 Ожидаемый результат:
 

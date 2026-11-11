@@ -465,8 +465,6 @@ class SchedulingService(
     private fun notFound(code: String): Nothing = throw SchedulingException(code, SchedulingErrorKind.NOT_FOUND)
     private fun conflict(code: String): Nothing = throw SchedulingException(code, SchedulingErrorKind.CONFLICT)
 
-    private data class ResolvedParticipant(val studentId: UUID, val priceMinor: Long)
-
     private companion object {
         const val MAX_SERIES_DAYS = 366L
     }

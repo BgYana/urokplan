@@ -252,12 +252,6 @@ internal class BillingService(
     private fun notFound(code: String): Nothing = throw BillingException(code, BillingErrorKind.NOT_FOUND)
     private fun conflict(code: String): Nothing = throw BillingException(code, BillingErrorKind.CONFLICT)
 
-    private data class SummaryData(
-        val charges: List<urokplan.billing.domain.LessonCharge>,
-        val payments: List<Payment>,
-        val ledger: List<urokplan.billing.domain.LedgerEntry>,
-    )
-
     private companion object {
         const val MAX_PAYMENT_UNITS = 10_000
     }

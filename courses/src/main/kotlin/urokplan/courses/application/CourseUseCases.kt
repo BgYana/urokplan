@@ -1,9 +1,5 @@
 package urokplan.courses.application
 
-import urokplan.courses.domain.CourseFormat
-import urokplan.courses.domain.ParticipationStatus
-import urokplan.identity.application.AccountReference
-import java.time.Instant
 import java.util.UUID
 
 interface CourseUseCases {
@@ -32,91 +28,6 @@ interface CoursesApi {
     fun findActiveEnrollments(courseId: UUID): List<EnrollmentReference>
     fun findGroup(id: UUID): GroupReference?
 }
-
-data class CreateCourseCommand(
-    val title: String,
-    val subject: String,
-    val format: CourseFormat,
-    val callLink: String?,
-)
-
-data class UpdateCourseCommand(
-    val title: String,
-    val subject: String,
-    val callLink: String?,
-)
-
-data class AddEnrollmentCommand(
-    val studentPublicId: String,
-    val priceMinor: Long,
-)
-
-data class CreateGroupCommand(
-    val courseId: UUID,
-    val name: String,
-    val callLink: String?,
-)
-
-data class UpdateGroupCommand(
-    val name: String,
-    val callLink: String?,
-)
-
-data class CourseView(
-    val id: UUID,
-    val teacher: AccountReference,
-    val title: String,
-    val subject: String,
-    val format: CourseFormat,
-    val callLink: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-)
-
-data class EnrollmentView(
-    val courseId: UUID,
-    val student: AccountReference,
-    val priceMinor: Long,
-    val status: ParticipationStatus,
-    val enrolledAt: Instant,
-    val endedAt: Instant?,
-)
-
-data class GroupView(
-    val id: UUID,
-    val courseId: UUID,
-    val name: String,
-    val callLink: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-)
-
-data class GroupMemberView(
-    val membershipId: UUID,
-    val student: AccountReference,
-    val joinedAt: Instant,
-)
-
-data class CourseReference(
-    val id: UUID,
-    val teacherId: UUID,
-    val format: CourseFormat,
-    val title: String,
-    val callLink: String?,
-)
-
-data class EnrollmentReference(
-    val courseId: UUID,
-    val studentId: UUID,
-    val priceMinor: Long,
-)
-
-data class GroupReference(
-    val id: UUID,
-    val courseId: UUID,
-    val callLink: String?,
-    val studentIds: Set<UUID>,
-)
 
 enum class CourseErrorKind {
     BAD_REQUEST,

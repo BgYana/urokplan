@@ -1,11 +1,6 @@
 package urokplan.relationships.application
 
-import urokplan.identity.application.AccountReference
-import urokplan.identity.domain.AccountRole
-import urokplan.relationships.domain.ConnectionRequestStatus
-import urokplan.relationships.domain.ConnectionStatus
 import urokplan.relationships.domain.ConnectionType
-import java.time.Instant
 import java.util.UUID
 
 enum class LearningActingRole {
@@ -33,27 +28,6 @@ interface RelationshipsApi {
     fun findActiveGuardianStudentIds(parentId: UUID): Set<UUID>
 }
 
-data class RequestView(
-    val id: UUID,
-    val type: ConnectionType,
-    val status: ConnectionRequestStatus,
-    val requester: AccountReference,
-    val owner: AccountReference,
-    val student: AccountReference,
-    val createdAt: Instant,
-    val decidedAt: Instant?,
-)
-
-data class ConnectionView(
-    val id: UUID,
-    val type: ConnectionType,
-    val status: ConnectionStatus,
-    val owner: AccountReference,
-    val student: AccountReference,
-    val createdAt: Instant,
-    val terminatedAt: Instant?,
-)
-
 enum class RelationshipErrorKind {
     BAD_REQUEST,
     FORBIDDEN,
@@ -65,7 +39,3 @@ class RelationshipException(
     val errorCode: String,
     val kind: RelationshipErrorKind,
 ) : RuntimeException(errorCode)
-
-internal fun AccountReference.requireRole(role: AccountRole, code: String) {
-    if (role !in roles) throw RelationshipException(code, RelationshipErrorKind.BAD_REQUEST)
-}

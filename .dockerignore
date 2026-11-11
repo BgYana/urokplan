@@ -1,9 +1,6 @@
 .git
 .gradle
+**/.gradle
 **/build
-!server/app/build
-server/app/build/*
-!server/app/build/libs
-server/app/build/libs/*
-!server/app/build/libs/urokplan-server.jar
+**/Dockerfile
 postgres-data

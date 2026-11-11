@@ -13,12 +13,12 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.serialization.Serializable
 
 fun Application.configureHttp(databaseReady: () -> Boolean) {
     install(ContentNegotiation) {
         json()
     }
+
     install(StatusPages) {
         exception<Exception> { call, cause ->
             this@configureHttp.log.error("Unhandled error for ${call.request.path()}", cause)
@@ -42,12 +42,3 @@ fun Application.configureHttp(databaseReady: () -> Boolean) {
         swaggerUI(path = "swagger", swaggerFile = "openapi/documentation.yaml")
     }
 }
-
-@Serializable
-data class HealthResponse(
-    val status: String,
-    val database: String,
-)
-
-@Serializable
-data class ErrorResponse(val code: String)

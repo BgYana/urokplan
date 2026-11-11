@@ -1,6 +1,5 @@
 package urokplan.identity.http
 
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -11,9 +10,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import urokplan.identity.application.AuthenticatedSession
-import urokplan.identity.application.IdentityUseCases
 import urokplan.identity.application.IdentityAuthentication
+import urokplan.identity.application.IdentityUseCases
 import urokplan.identity.application.InvalidCredentialsException
 import urokplan.identity.application.LoginAlreadyExistsException
 import urokplan.identity.application.RegistrationValidationException
@@ -91,19 +89,3 @@ private suspend inline fun <reified T : Any> ApplicationCall.receiveOrReject(): 
         respond(HttpStatusCode.BadRequest, IdentityErrorResponse("invalid_request"))
         null
     }
-
-public suspend fun ApplicationCall.requireAuthenticated(
-    authentication: IdentityAuthentication,
-): AuthenticatedSession? {
-    val authorization = request.headers[HttpHeaders.Authorization]
-    val token = authorization
-        ?.takeIf { it.startsWith("Bearer ", ignoreCase = true) }
-        ?.substringAfter(' ')
-        ?.trim()
-        ?.takeIf(String::isNotEmpty)
-    val authenticated = token?.let(authentication::resolveSession)
-    if (authenticated == null) {
-        respond(HttpStatusCode.Unauthorized, IdentityErrorResponse("unauthorized"))
-    }
-    return authenticated
-}
