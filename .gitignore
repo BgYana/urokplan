@@ -1,0 +1,29 @@
+# Gradle and Kotlin caches
+.gradle/
+.kotlin/
+**/build/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+out/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+local.properties
+*.jks
+*.keystore
+
+# Logs and JVM crash dumps
+*.log
+hs_err_pid*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local database data
+postgres-data/

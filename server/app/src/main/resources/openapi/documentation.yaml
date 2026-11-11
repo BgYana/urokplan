@@ -1,0 +1,2098 @@
+openapi: 3.1.0
+info:
+  title: UrokPlan API
+  version: 0.1.0
+paths:
+  /api/auth/register:
+    post:
+      summary: Зарегистрировать аккаунт
+      operationId: registerAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterAccountRequest"
+      responses:
+        "201":
+          description: Аккаунт создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "400":
+          description: Некорректные данные регистрации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Логин уже занят
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/login:
+    post:
+      summary: Войти в аккаунт
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Сессия создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Некорректный JSON-запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неверный логин или пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/logout:
+    post:
+      summary: Отозвать текущую сессию
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Сессия отозвана
+        "401":
+          description: Сессия отсутствует, истекла или отозвана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/me:
+    get:
+      summary: Получить текущий аккаунт
+      operationId: getCurrentAccount
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Текущий аккаунт
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Сессия отсутствует, истекла или отозвана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/me/billing-time-zone:
+    patch:
+      summary: Изменить часовой пояс финансовых расчётов
+      description: Используется для определения локальной даты при расчёте просрочки. Ожидается IANA-идентификатор часового пояса.
+      operationId: updateBillingTimeZone
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBillingTimeZoneRequest"
+      responses:
+        "200":
+          description: Часовой пояс обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/users/by-public-id/{publicId}:
+    get:
+      summary: Найти минимальный профиль по точному публичному ID
+      operationId: findUserByPublicId
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Минимальный публичный профиль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicAccountResponse"
+        "401":
+          description: Требуется действующая сессия
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Аккаунт не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/learning-connections/requests:
+    post:
+      summary: Отправить запрос на учебную связь
+      operationId: createLearningConnectionRequest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearningConnectionRequest"
+      responses:
+        "201":
+          description: Запрос создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionRequestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      summary: Получить историю запросов на учебную связь
+      operationId: listLearningConnectionRequests
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Запросы текущего участника
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionRequestResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/learning-connections/requests/{requestId}/accept:
+    post:
+      summary: Принять запрос на учебную связь
+      operationId: acceptLearningConnectionRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Активная учебная связь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/learning-connections/requests/{requestId}/reject:
+    post:
+      summary: Отклонить запрос на учебную связь
+      operationId: rejectLearningConnectionRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Отклонённый запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionRequestResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/learning-connections:
+    get:
+      summary: Получить активные учебные связи
+      operationId: listLearningConnections
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Активные связи текущего участника
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/learning-connections/{connectionId}:
+    delete:
+      summary: Прекратить учебную связь
+      operationId: terminateLearningConnection
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ConnectionId"
+      responses:
+        "200":
+          description: Завершённая связь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/guardian-connections/requests:
+    post:
+      summary: Отправить запрос на родительскую связь
+      operationId: createGuardianConnectionRequest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuardianConnectionRequest"
+      responses:
+        "201":
+          description: Запрос создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionRequestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      summary: Получить историю запросов на родительскую связь
+      operationId: listGuardianConnectionRequests
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Запросы текущего участника
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionRequestResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/guardian-connections/requests/{requestId}/accept:
+    post:
+      summary: Принять запрос на родительскую связь
+      operationId: acceptGuardianConnectionRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Активная родительская связь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/guardian-connections/requests/{requestId}/reject:
+    post:
+      summary: Отклонить запрос на родительскую связь
+      operationId: rejectGuardianConnectionRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Отклонённый запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionRequestResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/guardian-connections:
+    get:
+      summary: Получить активные родительские связи
+      operationId: listGuardianConnections
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Активные связи текущего участника
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/guardian-connections/{connectionId}:
+    delete:
+      summary: Прекратить родительскую связь
+      operationId: terminateGuardianConnection
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ConnectionId"
+      responses:
+        "200":
+          description: Завершённая связь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/courses:
+    post:
+      summary: Создать курс
+      operationId: createCourse
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseRequest"
+      responses:
+        "201":
+          description: Курс создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      summary: Получить доступные курсы
+      operationId: listCourses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Курсы преподавателя, ученика или связанного ребёнка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/courses/{courseId}:
+    get:
+      summary: Получить курс
+      operationId: getCourse
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Доступный курс
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Изменить курс
+      operationId: updateCourse
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseRequest"
+      responses:
+        "200":
+          description: Курс изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/courses/{courseId}/enrollments:
+    post:
+      summary: Включить ученика в курс
+      operationId: addCourseEnrollment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddEnrollmentRequest"
+      responses:
+        "201":
+          description: Участие создано или восстановлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      summary: Получить доступные участия в курсе
+      operationId: listCourseEnrollments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Преподаватель видит всех, ученик или родитель только себя или ребёнка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentResponse"
+  /api/courses/{courseId}/enrollments/price:
+    patch:
+      summary: Изменить цену всех активных участников
+      operationId: updateAllEnrollmentPrices
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePriceRequest"
+      responses:
+        "200":
+          description: Активные участия с новой ценой
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentResponse"
+  /api/courses/{courseId}/enrollments/{studentPublicId}:
+    patch:
+      summary: Изменить персональную цену ученика
+      operationId: updateEnrollmentPrice
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePriceRequest"
+      responses:
+        "200":
+          description: Участие с новой ценой
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentResponse"
+    delete:
+      summary: Исключить ученика из курса
+      operationId: removeCourseEnrollment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      responses:
+        "204":
+          description: Участие прекращено, активное членство в группе завершено
+  /api/groups:
+    post:
+      summary: Создать группу группового курса
+      operationId: createGroup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupRequest"
+      responses:
+        "201":
+          description: Группа создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupResponse"
+    get:
+      summary: Получить доступные группы
+      operationId: listGroups
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Группы преподавателя, ученика или связанного ребёнка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroupResponse"
+  /api/groups/{groupId}:
+    get:
+      summary: Получить группу
+      operationId: getGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Доступная группа
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupResponse"
+    patch:
+      summary: Изменить название или ссылку группы
+      operationId: updateGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupRequest"
+      responses:
+        "200":
+          description: Группа изменена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupResponse"
+  /api/groups/{groupId}/members:
+    post:
+      summary: Добавить участника курса в группу
+      operationId: addGroupMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGroupMemberRequest"
+      responses:
+        "201":
+          description: Участник добавлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupMemberResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      summary: Получить состав группы
+      operationId: listGroupMembers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Состав доступен только преподавателю курса
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroupMemberResponse"
+  /api/groups/{groupId}/members/{studentPublicId}:
+    delete:
+      summary: Удалить ученика из группы
+      operationId: removeGroupMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      responses:
+        "204":
+          description: Активное членство завершено, история сохранена
+  /api/lessons:
+    post:
+      summary: Создать разовое занятие
+      operationId: createLesson
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLessonRequest"
+      responses:
+        "201":
+          description: Занятие создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      summary: Получить календарь в диапазоне моментов времени
+      operationId: listLessons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: courseId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Доступные занятия преподавателя, ученика или связанного ребёнка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonResponse"
+  /api/lessons/{lessonId}:
+    get:
+      summary: Получить карточку занятия
+      operationId: getLesson
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LessonId"
+      responses:
+        "200":
+          description: Карточка с участниками в разрешённом объёме
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/lessons/{lessonId}/schedule:
+    patch:
+      summary: Перенести одно или последующие занятия серии
+      operationId: rescheduleLesson
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleLessonRequest"
+      responses:
+        "200":
+          description: Изменённые занятия с сохранёнными ID
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/lessons/{lessonId}/cancel:
+    post:
+      summary: Отменить одно или последующие занятия серии
+      operationId: cancelLesson
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelLessonRequest"
+      responses:
+        "200":
+          description: Отменённые занятия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonResponse"
+  /api/lessons/{lessonId}/participants/{studentPublicId}/attendance:
+    put:
+      summary: Установить или исправить посещаемость
+      operationId: updateLessonAttendance
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LessonId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAttendanceRequest"
+      responses:
+        "200":
+          description: Персональная запись участника
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonParticipantResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/lesson-series:
+    post:
+      summary: Создать конечную еженедельную серию
+      operationId: createLessonSeries
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSeriesRequest"
+      responses:
+        "201":
+          description: Серия и будущие занятия созданы
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeriesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/payments:
+    post:
+      summary: Создать попытку покупки единиц занятий
+      operationId: createPayment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "201":
+          description: Платёж ожидает результата mock-провайдера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/payments/{paymentId}:
+    get:
+      summary: Получить платёж
+      operationId: getPayment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      responses:
+        "200":
+          description: Платёж
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/mock-payments/{providerPaymentId}/result:
+    post:
+      summary: Имитировать результат mock-провайдера
+      operationId: resolveMockPayment
+      parameters:
+        - name: providerPaymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^mock-[0-9a-fA-F-]{36}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolvePaymentRequest"
+      responses:
+        "200":
+          description: Идемпотентно обработанный результат
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MockPaymentResultResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/courses/{courseId}/students/{studentPublicId}/payment-summary:
+    get:
+      summary: Получить баланс, начисления и историю оплаты
+      operationId: getPaymentSummary
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      responses:
+        "200":
+          description: Состояние оплаты ученика по курсу
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSummaryResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/courses/{courseId}/students/{studentPublicId}/payment-preview:
+    post:
+      summary: Рассчитать прогноз покупки без сохранения будущих распределений
+      operationId: previewPayment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/StudentPublicId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentPreviewRequest"
+      responses:
+        "200":
+          description: Долги и будущие занятия, покрываемые доступными и покупаемыми единицами
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentPreviewResponse"
+  /api/assignments:
+    post:
+      summary: Создать домашнее задание
+      operationId: createAssignment
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CreateAssignmentRequest"}
+      responses:
+        "201":
+          description: Задание создано
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssignmentResponse"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+    get:
+      summary: Получить доступные домашние задания
+      operationId: listAssignments
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: lessonId
+          in: query
+          schema: {type: string, format: uuid}
+      responses:
+        "200":
+          description: Доступные задания
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/AssignmentResponse"}
+  /api/assignments/{assignmentId}:
+    get:
+      summary: Получить задание и историю попыток
+      operationId: getAssignment
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/AssignmentId"}]
+      responses:
+        "200":
+          description: Домашнее задание
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssignmentResponse"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/assignments/{assignmentId}/submissions/draft:
+    put:
+      summary: Сохранить черновик текущей попытки
+      operationId: saveSubmissionDraft
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/AssignmentId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SaveDraftRequest"}
+      responses:
+        "200":
+          description: Черновик сохранён
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SubmissionResponse"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /api/assignments/{assignmentId}/submissions:
+    get:
+      summary: Получить доступную историю попыток по заданию
+      operationId: listAssignmentSubmissions
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/AssignmentId"}]
+      responses:
+        "200":
+          description: История попыток доступных учеников
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/AssignmentStudentResponse"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    post:
+      summary: Сдать текущую попытку
+      operationId: submitAssignment
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/AssignmentId"}]
+      responses:
+        "200":
+          description: Попытка сдана
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SubmissionResponse"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /api/submissions/{submissionId}/review:
+    put:
+      summary: Проверить попытку
+      operationId: reviewSubmission
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ReviewSubmissionRequest"}
+      responses:
+        "200":
+          description: Проверка сохранена
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SubmissionResponse"}
+  /api/lessons/{lessonId}/participants/{studentPublicId}/assessment:
+    put:
+      summary: Выставить или исправить оценку занятия
+      operationId: putLessonAssessment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {$ref: "#/components/parameters/LessonId"}
+        - {$ref: "#/components/parameters/StudentPublicId"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AssessmentRequest"}
+      responses:
+        "200":
+          description: История оценки
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssessmentSummaryResponse"}
+    get:
+      summary: Получить историю оценки занятия
+      operationId: getLessonAssessment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {$ref: "#/components/parameters/LessonId"}
+        - {$ref: "#/components/parameters/StudentPublicId"}
+      responses:
+        "200":
+          description: История оценки
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssessmentSummaryResponse"}
+  /api/assessments:
+    get:
+      summary: Получить историю и среднюю оценку по курсу
+      operationId: listAssessments
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: courseId
+          in: query
+          required: true
+          schema: {type: string, format: uuid}
+        - name: studentPublicId
+          in: query
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        "200":
+          description: История и среднее по последним версиям
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssessmentSummaryResponse"}
+  /api/lessons/{lessonId}/feedback:
+    put:
+      summary: Сохранить личную обратную связь
+      operationId: putLessonFeedback
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/LessonId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/FeedbackRequest"}
+      responses:
+        "200":
+          description: Обратная связь сохранена
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/FeedbackResponse"}
+    get:
+      summary: Получить доступную личную обратную связь
+      operationId: getLessonFeedback
+      security: [{bearerAuth: []}]
+      parameters: [{$ref: "#/components/parameters/LessonId"}]
+      responses:
+        "200":
+          description: Доступная обратная связь
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/FeedbackResponse"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/health:
+    get:
+      summary: Проверить готовность сервера и базы данных
+      operationId: getHealth
+      responses:
+        "200":
+          description: Сервер и база данных готовы
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: База данных недоступна
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  parameters:
+    AssignmentId:
+      name: assignmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    StudentPublicId:
+      name: studentPublicId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LessonId:
+      name: lessonId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PaymentId:
+      name: paymentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Некорректный запрос или роли участников
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Требуется действующая сессия
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Действие разрешено только адресату запроса
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Аккаунт, запрос или связь не найдены
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Запрос уже решён либо ожидающая или активная связь уже существует
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  schemas:
+    CreateAssignmentRequest:
+      type: object
+      required: [lessonId, text, targetStudentPublicIds]
+      properties:
+        lessonId: {type: string, format: uuid}
+        text: {type: string}
+        links:
+          type: array
+          items: {type: string, format: uri}
+        deadline: {type: [string, "null"], format: date-time}
+        targetStudentPublicIds:
+          type: array
+          uniqueItems: true
+          minItems: 1
+          items: {type: string, format: uuid}
+    SaveDraftRequest:
+      type: object
+      properties:
+        text: {type: [string, "null"]}
+        links:
+          type: array
+          items: {type: string, format: uri}
+    ReviewSubmissionRequest:
+      type: object
+      required: [decision, comment, score]
+      properties:
+        decision: {type: string, enum: [REVISION_REQUESTED, ACCEPTED]}
+        comment: {type: string}
+        score: {type: integer, minimum: 0, maximum: 10}
+    AssignmentResponse:
+      type: object
+      required: [id, lessonId, text, links, overdue, createdAt, students]
+      properties:
+        id: {type: string, format: uuid}
+        lessonId: {type: string, format: uuid}
+        text: {type: string}
+        links:
+          type: array
+          items: {type: string}
+        deadline: {type: [string, "null"], format: date-time}
+        overdue: {type: boolean}
+        createdAt: {type: string, format: date-time}
+        students:
+          type: array
+          items: {$ref: "#/components/schemas/AssignmentStudentResponse"}
+    AssignmentStudentResponse:
+      type: object
+      required: [studentPublicId, studentDisplayName, submissions]
+      properties:
+        studentPublicId: {type: string, format: uuid}
+        studentDisplayName: {type: string}
+        submissions:
+          type: array
+          items: {$ref: "#/components/schemas/SubmissionResponse"}
+    SubmissionResponse:
+      type: object
+      required: [id, attemptNumber, links, status, submittedLate]
+      properties:
+        id: {type: string, format: uuid}
+        attemptNumber: {type: integer}
+        text: {type: [string, "null"]}
+        links:
+          type: array
+          items: {type: string}
+        status: {type: string, enum: [DRAFT, SUBMITTED, REVISION_REQUESTED, ACCEPTED]}
+        submittedAt: {type: [string, "null"], format: date-time}
+        submittedLate: {type: boolean}
+        reviewComment: {type: [string, "null"]}
+        score: {type: [integer, "null"], minimum: 0, maximum: 10}
+        reviewedAt: {type: [string, "null"], format: date-time}
+    AssessmentRequest:
+      type: object
+      required: [score]
+      properties:
+        score: {type: integer, minimum: 0, maximum: 10}
+        comment: {type: [string, "null"]}
+    AssessmentResponse:
+      type: object
+      required: [id, lessonId, version, score, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        lessonId: {type: string, format: uuid}
+        version: {type: integer}
+        score: {type: integer}
+        comment: {type: [string, "null"]}
+        createdAt: {type: string, format: date-time}
+    AssessmentSummaryResponse:
+      type: object
+      required: [studentPublicId, assessments]
+      properties:
+        studentPublicId: {type: string, format: uuid}
+        averageScore: {type: [number, "null"], format: double}
+        assessments:
+          type: array
+          items: {$ref: "#/components/schemas/AssessmentResponse"}
+    FeedbackRequest:
+      type: object
+      required: [mood, difficulty]
+      properties:
+        mood: {type: integer, minimum: 1, maximum: 5}
+        difficulty: {type: integer, minimum: 1, maximum: 5}
+        comment: {type: [string, "null"]}
+    FeedbackResponse:
+      type: object
+      required: [studentPublicId, mood, difficulty, createdAt, updatedAt]
+      properties:
+        studentPublicId: {type: string, format: uuid}
+        mood: {type: integer, minimum: 1, maximum: 5}
+        difficulty: {type: integer, minimum: 1, maximum: 5}
+        comment: {type: [string, "null"]}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    AccountRole:
+      type: string
+      enum: [STUDENT, TEACHER, PARENT]
+    RegisterAccountRequest:
+      type: object
+      required: [login, displayName, password, roles]
+      properties:
+        login:
+          type: string
+          pattern: "^[A-Za-z0-9._-]{3,50}$"
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        billingTimeZone:
+          type: string
+          default: UTC
+          examples: [Europe/Moscow]
+    AccountResponse:
+      type: object
+      required: [publicId, login, displayName, roles, billingTimeZone]
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        login:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        billingTimeZone:
+          type: string
+    UpdateBillingTimeZoneRequest:
+      type: object
+      required: [billingTimeZone]
+      properties:
+        billingTimeZone:
+          type: string
+          examples: [Asia/Yekaterinburg]
+    PublicAccountResponse:
+      type: object
+      required: [publicId, displayName, roles]
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+    CreateLearningConnectionRequest:
+      type: object
+      required: [targetPublicId, actingAs]
+      properties:
+        targetPublicId:
+          type: string
+          format: uuid
+        actingAs:
+          type: string
+          enum: [TEACHER, STUDENT]
+    CreateGuardianConnectionRequest:
+      type: object
+      required: [targetPublicId, actingAs]
+      properties:
+        targetPublicId:
+          type: string
+          format: uuid
+        actingAs:
+          type: string
+          enum: [PARENT, STUDENT]
+    RelationshipAccountResponse:
+      type: object
+      required: [publicId, displayName, roles]
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+    ConnectionRequestResponse:
+      type: object
+      required: [id, type, status, requester, owner, student, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [LEARNING, GUARDIAN]
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+        requester:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        owner:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        student:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: [string, "null"]
+          format: date-time
+    ConnectionResponse:
+      type: object
+      required: [id, type, status, owner, student, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [LEARNING, GUARDIAN]
+        status:
+          type: string
+          enum: [ACTIVE, TERMINATED]
+        owner:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        student:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        createdAt:
+          type: string
+          format: date-time
+        terminatedAt:
+          type: [string, "null"]
+          format: date-time
+    CreateCourseRequest:
+      type: object
+      required: [title, subject, format]
+      properties:
+        title:
+          type: string
+          minLength: 2
+          maxLength: 100
+        subject:
+          type: string
+          minLength: 2
+          maxLength: 100
+        format:
+          type: string
+          enum: [INDIVIDUAL, GROUP]
+        callLink:
+          type: [string, "null"]
+          format: uri
+    UpdateCourseRequest:
+      type: object
+      required: [title, subject]
+      properties:
+        title:
+          type: string
+        subject:
+          type: string
+        callLink:
+          type: [string, "null"]
+          format: uri
+    CourseResponse:
+      type: object
+      required: [id, teacher, title, subject, format, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        teacher:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        title:
+          type: string
+        subject:
+          type: string
+        format:
+          type: string
+          enum: [INDIVIDUAL, GROUP]
+        callLink:
+          type: [string, "null"]
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AddEnrollmentRequest:
+      type: object
+      required: [studentPublicId, priceMinor]
+      properties:
+        studentPublicId:
+          type: string
+          format: uuid
+        priceMinor:
+          type: integer
+          format: int64
+          minimum: 1
+    UpdatePriceRequest:
+      type: object
+      required: [priceMinor]
+      properties:
+        priceMinor:
+          type: integer
+          format: int64
+          minimum: 1
+    EnrollmentResponse:
+      type: object
+      required: [courseId, student, priceMinor, status, enrolledAt]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        student:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        priceMinor:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        enrolledAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: [string, "null"]
+          format: date-time
+    CreateGroupRequest:
+      type: object
+      required: [courseId, name]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        callLink:
+          type: [string, "null"]
+          format: uri
+    UpdateGroupRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        callLink:
+          type: [string, "null"]
+          format: uri
+    GroupResponse:
+      type: object
+      required: [id, courseId, name, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        callLink:
+          type: [string, "null"]
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AddGroupMemberRequest:
+      type: object
+      required: [studentPublicId]
+      properties:
+        studentPublicId:
+          type: string
+          format: uuid
+    GroupMemberResponse:
+      type: object
+      required: [membershipId, student, joinedAt]
+      properties:
+        membershipId:
+          type: string
+          format: uuid
+        student:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        joinedAt:
+          type: string
+          format: date-time
+    ParticipantPriceRequest:
+      type: object
+      required: [studentPublicId]
+      properties:
+        studentPublicId:
+          type: string
+          format: uuid
+        priceMinor:
+          type: [integer, "null"]
+          format: int64
+          minimum: 1
+    CreateLessonRequest:
+      type: object
+      required: [courseId, startsAt, durationMinutes]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        groupId:
+          type: [string, "null"]
+          format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParticipantPriceRequest"
+        callLink:
+          type: [string, "null"]
+          format: uri
+    CreateSeriesRequest:
+      type: object
+      required: [courseId, localTime, zoneId, daysOfWeek, startDate, endDate, durationMinutes]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        groupId:
+          type: [string, "null"]
+          format: uuid
+        localTime:
+          type: string
+          format: time
+        zoneId:
+          type: string
+          examples: [Europe/Moscow]
+        daysOfWeek:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParticipantPriceRequest"
+        callLink:
+          type: [string, "null"]
+          format: uri
+    RescheduleLessonRequest:
+      type: object
+      required: [startsAt, durationMinutes, scope]
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        scope:
+          type: string
+          enum: [THIS, THIS_AND_FOLLOWING]
+    CancelLessonRequest:
+      type: object
+      required: [scope]
+      properties:
+        scope:
+          type: string
+          enum: [THIS, THIS_AND_FOLLOWING]
+    UpdateAttendanceRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [UNKNOWN, PRESENT, EXCUSED_ABSENCE, UNEXCUSED_ABSENCE]
+        reason:
+          type: [string, "null"]
+          maxLength: 500
+    LessonParticipantResponse:
+      type: object
+      required: [student, priceMinor, attendance]
+      properties:
+        student:
+          $ref: "#/components/schemas/RelationshipAccountResponse"
+        priceMinor:
+          type: integer
+          format: int64
+        attendance:
+          type: string
+          enum: [UNKNOWN, PRESENT, EXCUSED_ABSENCE, UNEXCUSED_ABSENCE]
+    LessonResponse:
+      type: object
+      required: [id, courseId, courseTitle, startsAt, endsAt, status, participants]
+      properties:
+        id:
+          type: string
+          format: uuid
+        seriesId:
+          type: [string, "null"]
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        courseTitle:
+          type: string
+        groupId:
+          type: [string, "null"]
+          format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [SCHEDULED, CANCELLED]
+        callLink:
+          type: [string, "null"]
+          format: uri
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/LessonParticipantResponse"
+    SeriesResponse:
+      type: object
+      required: [id, courseId, localTime, zoneId, daysOfWeek, startDate, endDate, durationMinutes, status, lessonCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        localTime:
+          type: string
+        zoneId:
+          type: string
+        daysOfWeek:
+          type: array
+          items:
+            type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        durationMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [ACTIVE, CANCELLED]
+        lessonCount:
+          type: integer
+    CreatePaymentRequest:
+      type: object
+      required: [courseId, studentPublicId, units]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        studentPublicId:
+          type: string
+          format: uuid
+        units:
+          type: integer
+          minimum: 1
+          maximum: 10000
+    ResolvePaymentRequest:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [SUCCESS, FAILURE]
+    MockPaymentResultResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDING, SUCCEEDED, FAILED]
+    PaymentPreviewRequest:
+      type: object
+      required: [units]
+      properties:
+        units:
+          type: integer
+          minimum: 1
+          maximum: 10000
+    PaymentResponse:
+      type: object
+      required: [id, courseId, studentPublicId, payerPublicId, units, unitPriceMinor, amountMinor, status, providerName, providerPaymentId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        studentPublicId:
+          type: string
+          format: uuid
+        payerPublicId:
+          type: string
+          format: uuid
+        units:
+          type: integer
+        unitPriceMinor:
+          type: integer
+          format: int64
+        amountMinor:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [PENDING, SUCCEEDED, FAILED]
+        providerName:
+          type: string
+          examples: [mock]
+        providerPaymentId:
+          type: string
+        confirmationUrl:
+          type: [string, "null"]
+          description: URL или deep link платёжного провайдера для подтверждения оплаты
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
+        failureCode:
+          type: [string, "null"]
+    ChargeResponse:
+      type: object
+      required: [lessonId, startsAt, endsAt, status, overdue]
+      properties:
+        lessonId:
+          type: string
+          format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [OPEN, COVERED, WAIVED]
+        overdue:
+          type: boolean
+    LedgerEntryResponse:
+      type: object
+      required: [id, type, unitsDelta, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [TOP_UP, CONSUMPTION, REFUND]
+        unitsDelta:
+          type: integer
+        paymentId:
+          type: [string, "null"]
+          format: uuid
+        lessonId:
+          type: [string, "null"]
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        reason:
+          type: [string, "null"]
+    PaymentSummaryResponse:
+      type: object
+      required: [courseId, studentPublicId, availableUnits, charges, payments, ledger, futureCoveredLessonIds]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        studentPublicId:
+          type: string
+          format: uuid
+        availableUnits:
+          type: integer
+          minimum: 0
+        charges:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChargeResponse"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentResponse"
+        ledger:
+          type: array
+          items:
+            $ref: "#/components/schemas/LedgerEntryResponse"
+        futureCoveredLessonIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    PaymentPreviewResponse:
+      type: object
+      required: [unitsToBuy, unitPriceMinor, amountMinor, debtLessonIds, futureLessonIds, remainingUnits]
+      properties:
+        unitsToBuy:
+          type: integer
+        unitPriceMinor:
+          type: integer
+          format: int64
+        amountMinor:
+          type: integer
+          format: int64
+        debtLessonIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        futureLessonIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        remainingUnits:
+          type: integer
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      required: [accessToken, tokenType, expiresAt, account]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          const: Bearer
+        expiresAt:
+          type: string
+          format: date-time
+        account:
+          $ref: "#/components/schemas/AccountResponse"
+    ErrorResponse:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+    HealthResponse:
+      type: object
+      required: [status, database]
+      properties:
+        status:
+          type: string
+          examples: [UP]
+        database:
+          type: string
+          examples: [UP]
